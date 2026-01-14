@@ -1,9 +1,15 @@
 // src/config.js
 
+import elevatorDing from './assets/elevator-ding.mp3';
+
+// Check if user has custom settings in localStorage
+const savedSettings = JSON.parse(localStorage.getItem('elevatorSettings'));
+
+
 export const elevatorConfig = {
-    floors: 10,           // num of floors - 0 to 9
-    elevators: 5,
+    floors: savedSettings?.floors || 10,           // Use saved value OR default to 10
+    elevators: savedSettings?.elevators || 5,      // Use saved value OR default to 5
     speedPerFloor: 1000,
     doorWaitTime: 2000,
-    arrivalSound: 'src/assets/elevator-ding.mp3' // path to sound file
+    arrivalSound: elevatorDing // Properly imported asset for Vite
 };

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Container, Typography, Box } from '@mui/material';
 import Building from './components/Building';
-
+import Settings from './components/Settings';
 function App() {
     return (
         <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
@@ -16,6 +16,7 @@ function App() {
 
             {/* The main Building component handles the visual logic */}
             <Building />
+            <Settings />
         </Container>
     );
 }
