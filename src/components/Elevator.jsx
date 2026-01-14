@@ -1,5 +1,5 @@
 import React from 'react';
-import {Box, Typography} from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import ElevatorIcon from '@mui/icons-material/Elevator';
 import { elevatorConfig } from '../config';
 
@@ -7,13 +7,27 @@ import { elevatorConfig } from '../config';
 const FLOOR_HEIGHT = 60;
 
 const Elevator = ({ data }) => {
-    // data contains: id, currentFloor, isMoving, occupied, state
+    // data contains: id, currentFloor, targetFloor, isMoving, occupied, state, lastTripTime
+
+
+    const floorToRender = data.isMoving && data.targetFloor !== null
+        ? data.targetFloor
+        : data.currentFloor;
 
     // Calculate position:
     // Floor 0 is at the bottom, Floor 9 is at the top.
-    // The DOM renders top-to-bottom.
-    // Formula: (TotalFloors - 1 - CurrentFloor) * FloorHeight
-    const topPosition = (elevatorConfig.floors - 1 - data.currentFloor) * FLOOR_HEIGHT;
+    const topPosition = (elevatorConfig.floors - 1 - floorToRender) * FLOOR_HEIGHT;
+
+    // If moving, the duration must match the total travel time (Distance * Speed).
+    // If not moving, we use a short transition for color changes.
+    let transitionDuration = '300ms'; // Default for background color
+
+    if (data.isMoving && data.targetFloor !== null) {
+        const distance = Math.abs(data.targetFloor - data.currentFloor);
+        // Ensure we don't multiply by 0
+        const travelTime = Math.max(distance, 1) * elevatorConfig.speedPerFloor;
+        transitionDuration = `${travelTime}ms`;
+    }
 
     // Determine color based on state
     let color = 'black'; // Default / Idle
@@ -37,10 +51,13 @@ const Elevator = ({ data }) => {
                 color: 'white',
                 bgcolor: color,
                 borderRadius: 1,
-                // The magic happens here: translate moves it smoothly
+
+                // Visual Movement Logic
                 transform: `translateY(${topPosition}px)`,
-                // We match the transition time to the travel time per floor
-                transition: `transform ${elevatorConfig.speedPerFloor}ms linear, background-color 0.3s`,
+
+                // We apply the calculated duration to the transform property
+                transition: `transform ${transitionDuration} linear, background-color 300ms`,
+
                 zIndex: 10,
                 boxShadow: 3,
                 border: '2px solid #333'
@@ -50,7 +67,7 @@ const Elevator = ({ data }) => {
 
             {/* BONUS: Display Trip Time */}
             {!data.isMoving && data.lastTripTime && (
-                <Typography variant="caption" sx={{ fontSize: '0.7rem', fontWeight: 'bold' }}>
+                <Typography variant="caption" sx={{ fontSize: '0.7rem', fontWeight: 'bold', ml: 0.5 }}>
                     {data.lastTripTime}s
                 </Typography>
             )}
