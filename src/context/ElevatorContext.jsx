@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { elevatorConfig } from '../config';
-import useSound from 'use-sound';
 
 // Create Context
 const ElevatorContext = createContext();
@@ -20,9 +19,6 @@ export const ElevatorProvider = ({ children }) => {
 
     const [floorCalls, setFloorCalls] = useState([]);
 
-    // Sound effect hook
-    const [playArrival] = useSound(elevatorConfig.arrivalSound, { volume: 0.5 });
-
     // --- LOGIC ---
 
     // Helper to calculate travel time
@@ -30,14 +26,14 @@ export const ElevatorProvider = ({ children }) => {
         return Math.abs(targetFloor - currentFloor) * elevatorConfig.speedPerFloor;
     };
 
-    // 1. Refactored moveElevator: Now wrapped in useCallback and receives currentFloor
-    // This breaks the dependency chain so it doesn't need to depend on the 'elevators' array
+    // 1. Move Elevator Logic
+    // Using useCallback to prevent infinite loops in useEffect
     const moveElevator = useCallback((id, targetFloor, currentFloor) => {
         const startTime = Date.now(); // Start timer
 
         // 1. Mark as moving and set target
         setElevators(prev => prev.map(e =>
-            e.id === id ? { ...e, isMoving: true, occupied: true, targetFloor,startTime: startTime  } : e
+            e.id === id ? { ...e, isMoving: true, occupied: true, targetFloor, startTime: startTime } : e
         ));
 
         // Calculate how long the travel takes
@@ -48,16 +44,26 @@ export const ElevatorProvider = ({ children }) => {
             const endTime = Date.now();
             const duration = (endTime - startTime) / 1000; // Convert to seconds
 
-
             // ARRIVAL LOGIC
             // Update floor to target
             setElevators(prev => prev.map(e =>
-                e.id === id ? { ...e, currentFloor: targetFloor, isMoving: false,lastTripTime: duration.toFixed(1) } : e
+                e.id === id ? { ...e, currentFloor: targetFloor, isMoving: false, lastTripTime: duration.toFixed(1) } : e
             ));
 
-            // Play Sound
-            try { playArrival(); } catch (e) { /* ignore sound errors */
-            console.error(e);
+
+            try {
+                const audio = new Audio(elevatorConfig.arrivalSound);
+                audio.volume = 0.5; // Set volume (0.0 to 1.0)
+                const playPromise = audio.play();
+
+                // Handle browsers blocking autoplay
+                if (playPromise !== undefined) {
+                    playPromise.catch(error => {
+                        console.warn("Audio playback failed (usually due to browser autoplay policy):", error);
+                    });
+                }
+            } catch (e) {
+                console.error("Audio error:", e);
             }
 
             console.log(`Elevator ${id} arrived at floor ${targetFloor}`);
@@ -71,7 +77,7 @@ export const ElevatorProvider = ({ children }) => {
             }, elevatorConfig.doorWaitTime);
 
         }, travelTime);
-    }, [playArrival]); // No dependency on 'elevators' array!
+    }, []);
 
 
     // 2. Main Algorithm: Process the queue
@@ -92,8 +98,6 @@ export const ElevatorProvider = ({ children }) => {
                 return distCurrent < distClosest ? current : closest;
             });
 
-            // FIX: Wrap in setTimeout to ensure state update happens AFTER render cycle
-            // This solves the "setState synchronously" ESLint error
             setTimeout(() => {
                 moveElevator(bestElevator.id, nextFloor, bestElevator.currentFloor);
                 // Remove the call from queue
@@ -113,7 +117,6 @@ export const ElevatorProvider = ({ children }) => {
         const isAlreadyThere = elevators.find(e => e.currentFloor === floorIndex && !e.occupied);
         if (isAlreadyThere) {
             console.log("Elevator already here, opening doors...");
-            // Reuse move logic with 0 distance (just triggers sound + door wait)
             moveElevator(isAlreadyThere.id, floorIndex, floorIndex);
             return;
         }
