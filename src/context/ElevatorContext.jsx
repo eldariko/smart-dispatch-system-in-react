@@ -33,9 +33,11 @@ export const ElevatorProvider = ({ children }) => {
     // 1. Refactored moveElevator: Now wrapped in useCallback and receives currentFloor
     // This breaks the dependency chain so it doesn't need to depend on the 'elevators' array
     const moveElevator = useCallback((id, targetFloor, currentFloor) => {
+        const startTime = Date.now(); // Start timer
+
         // 1. Mark as moving and set target
         setElevators(prev => prev.map(e =>
-            e.id === id ? { ...e, isMoving: true, occupied: true, targetFloor } : e
+            e.id === id ? { ...e, isMoving: true, occupied: true, targetFloor,startTime: startTime  } : e
         ));
 
         // Calculate how long the travel takes
@@ -43,11 +45,14 @@ export const ElevatorProvider = ({ children }) => {
 
         // 2. Wait for travel time (Simulation of movement)
         setTimeout(() => {
-            // ARRIVAL LOGIC
+            const endTime = Date.now();
+            const duration = (endTime - startTime) / 1000; // Convert to seconds
 
+
+            // ARRIVAL LOGIC
             // Update floor to target
             setElevators(prev => prev.map(e =>
-                e.id === id ? { ...e, currentFloor: targetFloor, isMoving: false } : e
+                e.id === id ? { ...e, currentFloor: targetFloor, isMoving: false,lastTripTime: duration.toFixed(1) } : e
             ));
 
             // Play Sound

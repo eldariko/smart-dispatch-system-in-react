@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box } from '@mui/material';
+import {Box, Typography} from '@mui/material';
 import ElevatorIcon from '@mui/icons-material/Elevator';
 import { elevatorConfig } from '../config';
 
@@ -47,8 +47,13 @@ const Elevator = ({ data }) => {
             }}
         >
             <ElevatorIcon />
-            {/* Optional: Display Elevator ID for debugging */}
-            {/* <Typography variant="caption" sx={{position:'absolute', bottom: 0}}>{data.id}</Typography> */}
+
+            {/* BONUS: Display Trip Time */}
+            {!data.isMoving && data.lastTripTime && (
+                <Typography variant="caption" sx={{ fontSize: '0.7rem', fontWeight: 'bold' }}>
+                    {data.lastTripTime}s
+                </Typography>
+            )}
         </Box>
     );
 };
